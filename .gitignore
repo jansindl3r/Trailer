@@ -1,5 +1,6 @@
 full/_*
 trial/_*
+*.ttx
 
 .DS_Store
 __pycache__

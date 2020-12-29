@@ -1,8 +1,12 @@
+import re
+
 from fontTools.ttLib import TTFont
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from pathlib import Path
 from typing import List, Union
 from copy import deepcopy
+
+__all__ = ["MakeTrial"]
 
 
 class MakeTrial:
@@ -13,9 +17,8 @@ class MakeTrial:
         replacer: str,
         path_out: Path,
         suffix: str = "Trial",
-        family_name = None,
+        family_name=None,
         ttf_components: bool = True,
-
     ) -> None:
         self.font = font
         self.keep_g_names = keep_g_names
@@ -26,6 +29,9 @@ class MakeTrial:
         self.family_name = family_name
 
     def process(self) -> None:
+        """
+        Triggers process of substituting
+        """
         if self.font.has_key("CFF "):
             self.process_cff()
         if self.font.has_key("CFF2"):
@@ -44,26 +50,34 @@ class MakeTrial:
         return None
 
     def process_name(self) -> None:
-        
+        """
+        Updates name table, searches for appearance of font name
+        """
         if not self.family_name:
             family_name = font["name"]
-            names = filter(lambda x:x.nameID == 1, font["name"].names)
+            names = filter(lambda x: x.nameID == 1, font["name"].names)
             names = [i.toUnicode() for i in names]
             name = names[0]
-        
+
         else:
             name = self.family_name
 
+        pattern = r"(\ ?)".join(name.split())
         for name_entry in font["name"].names:
-            print(
-                name_entry.nameID,
-                name_entry.platformID,
-                name_entry.platEncID,
-                name_entry.toUnicode(),
-            )
+            if name_entry.nameID in [1, 3, 4, 6, 18, 20, 21]:
+                entry = name_entry.toUnicode()
+                match = re.search(pattern, entry)
+                joiner = match.group(1)
+                new_name = joiner.join([*name.split(' '), self.suffix])
+                left, right = match.span(0)
+                new_entry = entry[:left] + new_name + entry[right:]
+                name_entry.string = new_entry
         return None
 
     def process_cff(self) -> None:
+        """
+        Subs cff table
+        """
         cff = self.font["CFF "]
         cmap_reversed = {v: k for k, v in self.font.getBestCmap().items()}
         if hasattr(cff, "desubroutinize"):
@@ -78,6 +92,10 @@ class MakeTrial:
         return None
 
     def process_cff2(self) -> None:
+        """
+        Subs cff2 table. Same as cff table. Changes are expected, so the func
+        is yet duplicated
+        """
         cff2 = self.font["CFF2"]
 
         cmap_reversed = {v: k for k, v in self.font.getBestCmap().items()}
@@ -106,6 +124,11 @@ class MakeTrial:
         return None
 
     def process_gpos(self) -> None:
+        """
+        Will update kerning. 
+        V A V -> n n n 
+        should chage kerning V A and A V, because shaped of theres letters changed.
+        """
         lookup_indexes = self._kerning_lookup_indexes()
         if not lookup_indexes:
             return None
@@ -131,10 +154,16 @@ class MakeTrial:
                             pairset.remove(record)
 
     def process_hmtx(self) -> None:
+        """
+        Updates horizontal metrics.
+        """
         self._process_base(self.font["hmtx"])
         return None
 
     def process_glyf(self) -> None:
+        """
+        Processes glyf table
+        """
         if self.ttf_components:
             glyf = self.font["glyf"]
             gs = self.font.getGlyphSet()
@@ -157,25 +186,22 @@ class MakeTrial:
         return None
 
 
-
 if __name__ == "__main__":
 
     import argparse
 
     class Formatter(
-            argparse.MetavarTypeHelpFormatter,
-            argparse.RawDescriptionHelpFormatter
-        ):
+        argparse.MetavarTypeHelpFormatter, argparse.RawDescriptionHelpFormatter
+    ):
         pass
 
-    class CustomError(Exception):
+    class MissingGlyphException(Exception):
         pass
 
     parser = argparse.ArgumentParser(
-        description="Tool for producing trial fonts.",
+        description="A tool for producing trial fonts.",
         formatter_class=Formatter,
-        epilog = \
-'''
+        epilog="""
 Example command:
 
 python trailer.py font_in.otf font_out.otf --replacer-character n --keep-characters a b c --keep-unicodes-base10 100 101 
@@ -183,70 +209,70 @@ python trailer.py font_in.otf font_out.otf --replacer-character n --keep-charact
 The command above font_in.otf as input and outputs font_out.otf. 
 It replaces every glyph except those representing characters "a", "b" and "c" & 
 glyphs with unicodes 100 & 101 by character "n".
-'''
-    )
-    print(dir(argparse))
-    parser.add_argument(
-        "font_in", type=Path, help="Path to a font that you want to make trial of."
+""",
     )
     parser.add_argument(
-        "path_out", type=Path, help="Path where save the trial font to."
+        "font_in", type=Path, help="path to a font that you want to make trial of."
+    )
+    parser.add_argument(
+        "path_out", type=Path, help="path where to save the trial font"
     )
 
-    keep_group = parser.add_mutually_exclusive_group(required=True)
+    keep_group = parser.add_argument_group("Keep glyphs", "glyphs that you wish to keep in the font")
     keep_group.add_argument(
         "--keep-characters",
         type=str,
         nargs="+",
-        help='Space seperated list of characters f.e. "a b 1 2 3"',
+        help='cpace seperated list of characters f.e. "a b 1 2 3"',
     )
     keep_group.add_argument(
         "--keep-glyph-names",
         type=str,
         nargs="+",
-        help='Space seperated list of glyph names f.e. "a b one two three"',
+        help='cpace seperated list of glyph names f.e. "a b one two three"',
     )
     keep_group.add_argument(
         "--keep-unicodes-base10",
         type=int,
         nargs="+",
-        help='Space seperated list of base 10 unicodes to keep f.e. "97 98 49 50 51"',
+        help='space seperated list of base 10 unicodes to keep f.e. "97 98 49 50 51"',
     )
-
-    replacer_group = parser.add_mutually_exclusive_group(required=True)
-    replacer_group.add_argument(
+    
+    replacer_group = parser.add_argument_group('Replacing glyph', 'Glyph that will replace glyphs which are not going to be kept.')
+    exclusive_group = replacer_group.add_mutually_exclusive_group(required=True)
+    exclusive_group.add_argument(
         "--replacer-character",
         type=str,
-        help="A character which represents a glyph that will replace glyphs that are not set to be kept",
+        help="a character which represents a glyph that will replace glyphs that are not set to be kept",
     )
-    replacer_group.add_argument(
+    exclusive_group.add_argument(
         "--replacer-glyph-name",
         type=str,
-        help="A glyphname which represents a glyph that will replace glyphs that are not set to be kept",
+        help="a glyphname which represents a glyph that will replace glyphs that are not set to be kept",
     )
-    replacer_group.add_argument(
+    exclusive_group.add_argument(
         "--replacer-unicode-base10",
         type=int,
-        help="A base 10 unicode value of a glyph that will repalce glyphs that are not set to be kept",
+        help="a base 10 unicode value of a glyph that will repalce glyphs that are not set to be kept",
     )
 
     parser.add_argument(
         "--skip",
         type=int,
         default=True,
-        help="Stops with an error if glyph that is set to be kept in the font is missing",
+        help="stops with an error if glyph that is set to be kept in the font is missing",
     )
     parser.add_argument(
         "--ttf-components",
-        type=int,
+        type=bool,
         default=True,
-        help="Add replacer glyph as a component in TT flavoured fonts",
+        help="add replacer glyph as a component in TT flavoured fonts",
     )
 
     parser.add_argument(
         "--family-name",
         type=str,
-        help="Set font's family name. If not set, the program determines the family name itself. The renaming process is based on this value.",
+        help="set fonts family name. If not set, the program determines the family name itself. The renaming process is based on this value.",
     )
 
     args = parser.parse_args()
@@ -266,11 +292,11 @@ glyphs with unicodes 100 & 101 by character "n".
 
     for possible_replacer, get_replacer_name in replacers:
         if replacer and possible_replacer:
-            print("error")
+            raise MissingGlyphException
         if possible_replacer:
             replacer = get_replacer_name(possible_replacer)
 
-    assert replacer in cmap_reversed, "replacer not in font"
+    assert replacer in cmap_reversed, "replacing glyph not in font"
 
     keep_unicodes = []
 
@@ -290,7 +316,7 @@ glyphs with unicodes 100 & 101 by character "n".
             keep_g_names.append(g_name)
         else:
             if not args.skip:
-                print("error missing")
+                raise MissingGlyphException
 
     if args.keep_glyph_names:
         for g_name in args.keep_glyph_names:
@@ -298,7 +324,7 @@ glyphs with unicodes 100 & 101 by character "n".
                 keep_g_names.append(g_name)
             else:
                 if not args.skip:
-                    print("error missing")
+                    raise MissingGlyphException
 
     trial = MakeTrial(
         font=font,
@@ -306,7 +332,7 @@ glyphs with unicodes 100 & 101 by character "n".
         replacer=replacer,
         path_out=args.path_out,
         ttf_components=args.ttf_components,
-        family_name=args.family_name
+        family_name=args.family_name,
     )
     trial.process()
     trial.save()

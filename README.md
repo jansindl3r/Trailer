@@ -15,6 +15,6 @@ Seeing empty glyphs, .notdefs or fallback fonts can be confusing when showcasing
 ```
 
 # To do:
-- update kerning pairs
-- Flatten components
-- More replacing characters
+- Update kerning pairs, so glyphs not containing their original shape are updated accordingly.
+- Flatten components. If user wants to keep `i` it should keep its components as well.
+- Sequence of replacing characters. Replacing `a-z` with `n` might not give the best impression of the typeface. Replacing it with sequence of f.e. `n, o, s` might give more a bit more rhytmical and representing result.
