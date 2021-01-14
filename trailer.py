@@ -182,6 +182,8 @@ class MakeTrial:
         return None
 
     def save(self) -> None:
+        if not self.path_out.parent.exists():
+            self.path_out.parent.mkdir(parents=True, exists_ok=True)
         self.font.save(str(self.path_out))
         return None
 
@@ -270,6 +272,13 @@ glyphs with unicodes 100 & 101 by character "n".
     )
 
     parser.add_argument(
+        "--suffix",
+        type=str,
+        help="font's suffix. Trial or whatever......####",
+        default=None
+    )
+
+    parser.add_argument(
         "--family-name",
         type=str,
         help="set fonts family name. If not set, the program determines the family name itself. The renaming process is based on this value.",
@@ -333,6 +342,7 @@ glyphs with unicodes 100 & 101 by character "n".
         path_out=args.path_out,
         ttf_components=args.ttf_components,
         family_name=args.family_name,
+        suffix=args.suffix
     )
     trial.process()
     trial.save()
