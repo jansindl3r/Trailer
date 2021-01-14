@@ -260,14 +260,18 @@ glyphs with unicodes 100 & 101 by character "n".
 
     parser.add_argument(
         "--skip",
-        type=int,
-        default=True,
+        type=bool,
+        nargs="?",
+        const=True,
+        default=False,
         help="stops with an error if glyph that is set to be kept in the font is missing",
     )
     parser.add_argument(
         "--ttf-components",
         type=bool,
-        default=True,
+        nargs="?",
+        const=True,
+        default=False,
         help="add replacer glyph as a component in TT flavoured fonts",
     )
 

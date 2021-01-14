@@ -1,5 +1,5 @@
 # Trailer
-## A tool for making demo versions of your fonts
+## _A tool for making demo versions of your fonts_
 
 ```
     python trailer.py font.otf font_trial.otf --keep-characters A B C \ 
@@ -7,14 +7,14 @@
     --replacer-character n 
 ```
 
-### pyftsubset
+## pyftsubset
 There is a great tool for font substitution, it's called `pyftsubset` and it's part of `fontTools`! I have always found it a bit too complicated to make trial fonts with it. I believe that this tool is primarily meant for substituting fonts that go on the web - making it smaller in size, removing unnecessary data as well as unnecessary characters.
 
-### Why Trailer?
+## Why Trailer?
 Removing certain glyphs of a font for purposes of providing a trial licence might not be that useful as .notdef glyph or fallback font show up instead of a missing glyph. This can be especially confusing when your fallback font matches a fallback font with similar aspects, like mono spaced to mono spaced. Making `pyftsubset` not changing anything else except the glyph set is a challenge by itself. Therefore I found it much useful to replace unwanted glyphs with an arbitrary glyph, which can give better overview of the typeface's texture while still limiting the font's character set.
 
 
-### How do I control it?
+## How do I control it?
 Trailer two positional arguments
 1. A path to a font which you want to make a trial of
 1. A path where you want to save it
@@ -38,12 +38,12 @@ it has two groups of keyword arguments
     --replacer-character "n" 
 ```
 
-### To do:
+## To do:
 - Update kerning pairs, so glyphs not containing their original shape are updated accordingly.
 - Flatten components. If user wants to keep `i` it should keep its components as well.
 - Sequence of replacing characters. Replacing `a-z` with `n` might not give the best impression of the typeface. Replacing it with sequence of f.e. `n, o, s` might give more a bit more rhytmical and representing result.
 
-### Happy trialing!
+## Happy trialing!
 
 ```
 ###########################################
