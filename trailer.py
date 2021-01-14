@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import List, Union
 from copy import deepcopy
 
-__all__ = ["MakeTrial"]
+__all__ = ["Trailer"]
 
 
-class MakeTrial:
+class Trailer:
     def __init__(
         self,
         font: TTFont,
@@ -51,7 +51,8 @@ class MakeTrial:
 
     def process_name(self) -> None:
         """
-        Updates name table, searches for appearance of font name
+        Updates name table, searches for appearance of font name if font name
+        is not set directly
         """
         if not self.family_name:
             family_name = font["name"]
@@ -93,7 +94,7 @@ class MakeTrial:
 
     def process_cff2(self) -> None:
         """
-        Subs cff2 table. Same as cff table. Changes are expected, so the func
+        Subs cff2 table. Same as cff table. Differences are expected, so the func
         is yet duplicated
         """
         cff2 = self.font["CFF2"]
@@ -208,36 +209,36 @@ Example command:
 
 python trailer.py font_in.otf font_out.otf --replacer-character n --keep-characters a b c --keep-unicodes-base10 100 101 
 
-The command above font_in.otf as input and outputs font_out.otf. 
+The command above processes font_in.otf and outputs font_out.otf. 
 It replaces every glyph except those representing characters "a", "b" and "c" & 
 glyphs with unicodes 100 & 101 by character "n".
 """,
     )
     parser.add_argument(
-        "font_in", type=Path, help="path to a font that you want to make trial of."
+        "font_in", type=Path, help="Path to a font that you want to make trial of."
     )
     parser.add_argument(
-        "path_out", type=Path, help="path where to save the trial font"
+        "path_out", type=Path, help="Path where to save the trial font"
     )
 
-    keep_group = parser.add_argument_group("Keep glyphs", "glyphs that you wish to keep in the font")
+    keep_group = parser.add_argument_group("Keep glyphs", "Glyphs that you wish to keep in the font")
     keep_group.add_argument(
         "--keep-characters",
         type=str,
         nargs="+",
-        help='cpace seperated list of characters f.e. "a b 1 2 3"',
+        help='Space seperated list of characters f.e. "a b 1 2 3"',
     )
     keep_group.add_argument(
         "--keep-glyph-names",
         type=str,
         nargs="+",
-        help='cpace seperated list of glyph names f.e. "a b one two three"',
+        help='Space seperated list of glyph names f.e. "a b one two three"',
     )
     keep_group.add_argument(
         "--keep-unicodes-base10",
         type=int,
         nargs="+",
-        help='space seperated list of base 10 unicodes to keep f.e. "97 98 49 50 51"',
+        help='Space seperated list of base 10 unicodes to keep f.e. "97 98 49 50 51"',
     )
     
     replacer_group = parser.add_argument_group('Replacing glyph', 'Glyph that will replace glyphs which are not going to be kept.')
@@ -245,17 +246,17 @@ glyphs with unicodes 100 & 101 by character "n".
     exclusive_group.add_argument(
         "--replacer-character",
         type=str,
-        help="a character which represents a glyph that will replace glyphs that are not set to be kept",
+        help="Character which represents a glyph that will replace glyphs that are not set to be kept",
     )
     exclusive_group.add_argument(
         "--replacer-glyph-name",
         type=str,
-        help="a glyphname which represents a glyph that will replace glyphs that are not set to be kept",
+        help="Glyphname which represents a glyph that will replace glyphs that are not set to be kept",
     )
     exclusive_group.add_argument(
         "--replacer-unicode-base10",
         type=int,
-        help="a base 10 unicode value of a glyph that will repalce glyphs that are not set to be kept",
+        help="Base 10 unicode value of a glyph that will replace glyphs that are not set to be kept",
     )
 
     parser.add_argument(
@@ -264,7 +265,7 @@ glyphs with unicodes 100 & 101 by character "n".
         nargs="?",
         const=True,
         default=False,
-        help="stops with an error if glyph that is set to be kept in the font is missing",
+        help="Stops with an error if glyph that is set to be kept in the font is missing",
     )
     parser.add_argument(
         "--ttf-components",
@@ -272,20 +273,20 @@ glyphs with unicodes 100 & 101 by character "n".
         nargs="?",
         const=True,
         default=False,
-        help="add replacer glyph as a component in TT flavoured fonts",
+        help="Add replacer glyph as a component in TT flavoured fonts",
     )
 
     parser.add_argument(
         "--suffix",
         type=str,
-        help="font's suffix. Trial or whatever......####",
+        help="Suffix of font's name.",
         default=None
     )
 
     parser.add_argument(
         "--family-name",
         type=str,
-        help="set fonts family name. If not set, the program determines the family name itself. The renaming process is based on this value.",
+        help="Sets font's family name. If not set, the program determines the family name itself. The renaming process is based on this value.",
     )
 
     args = parser.parse_args()
@@ -339,7 +340,7 @@ glyphs with unicodes 100 & 101 by character "n".
                 if not args.skip:
                     raise MissingGlyphException
 
-    trial = MakeTrial(
+    trial = Trailer(
         font=font,
         keep_g_names=keep_g_names,
         replacer=replacer,
